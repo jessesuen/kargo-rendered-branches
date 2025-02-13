@@ -1,0 +1,89 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: dev
+  namespace: kargo-rendered-branches
+  annotations:
+    kargo.akuity.io/color: green
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: guestbook
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      steps:
+      - task: {name: render-image}
+        vars: [{name: env, value: dev}]
+
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: staging
+  namespace: kargo-rendered-branches
+  annotations:
+    kargo.akuity.io/color: yellow
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: guestbook
+    sources:
+      stages:
+      - dev
+  promotionTemplate:
+    spec:
+      steps:
+      - task: {name: render-image}
+        vars: [{name: env, value: staging}]
+
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: prod-west
+  namespace: kargo-rendered-branches
+  annotations:
+    kargo.akuity.io/color: red
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: guestbook
+    sources:
+      stages:
+      - staging
+  promotionTemplate:
+    spec:
+      steps:
+      - task: {name: render-image}
+        vars: [{name: env, value: prod}]
+
+---
+# This stage renders configuration changes for all environments.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: render-envs
+  namespace: kargo-rendered-branches
+  annotations:
+    kargo.akuity.io/color: grey
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: config
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      steps:
+      - task: {name: render-config}
+        vars: [{name: env, value: dev}]
+      - task: {name: render-config}
+        vars: [{name: env, value: staging}]
+      - task: {name: render-config}
+        vars: [{name: env, value: prod}]

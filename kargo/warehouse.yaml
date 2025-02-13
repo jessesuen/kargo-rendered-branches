@@ -1,0 +1,26 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: guestbook
+  namespace: kargo-rendered-branches
+spec:
+  subscriptions:
+  - image:
+      repoURL: ghcr.io/akuity/guestbook
+      imageSelectionStrategy: SemVer
+      allowTags: ^v?[0-9]+\.[0-9]+\.[0-9]+([\+-].*)?$
+
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: config
+  namespace: kargo-rendered-branches
+spec:
+  subscriptions:
+  - git:
+      repoURL: https://github.com/akuity/kargo-rendered-branches.git
+      branch: main
+      includePaths:
+      - base
+      - glob:env/*

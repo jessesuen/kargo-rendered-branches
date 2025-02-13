@@ -1,0 +1,41 @@
+# This task is intended to be used in a promotion template to render
+# the Kustomize configuration for a specific environment to an env
+# specific branch. It is nearly identical to the `render-image`
+# PromotionTask but without the `kustomize-set-image` step.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionTask
+metadata:
+  name: render-config
+  namespace: kargo-rendered-branches
+spec:
+  vars:
+  - name: repoURL
+    value: https://github.com/akuity/kargo-rendered-branches.git
+  - name: branch
+    value: main
+  - name: env
+  steps:
+  - uses: git-clone
+    config:
+      repoURL: ${{ vars.repoURL }}
+      checkout:
+      - commit: ${{ commitFrom(vars.repoURL).ID }}
+        path: ./src
+      - branch: env/${{ vars.env }}
+        path: ./out
+        create: true
+  - uses: git-clear
+    config:
+      path: ./out
+  - uses: kustomize-build
+    config:
+      path: ./src/env/${{ vars.env }}
+      outPath: ./out
+  - uses: git-commit
+    as: commit
+    config:
+      path: ./out
+      message: Updated configuration for ${{ vars.env }}
+  - uses: git-push
+    config:
+      path: ./out

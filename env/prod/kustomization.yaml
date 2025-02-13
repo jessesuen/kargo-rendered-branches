@@ -5,3 +5,6 @@ resources:
 - ../../base
 
 namespace: guestbook-prod
+
+patches:
+- path: increase-replicas.yaml

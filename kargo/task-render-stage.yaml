@@ -39,4 +39,11 @@ spec:
   - uses: git-push
     config:
       path: ./out
-      targetBranch: env/${{ vars.env }}
+  # This is necessary so repeated invocations of this task
+  # have a clean working directories
+  - uses: delete
+    config:
+      path: ./out
+  - uses: delete
+    config:
+      path: ./src

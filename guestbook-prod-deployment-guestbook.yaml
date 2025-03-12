@@ -4,7 +4,7 @@ metadata:
   name: guestbook
   namespace: guestbook-prod
 spec:
-  replicas: 3
+  replicas: 4
   revisionHistoryLimit: 3
   selector:
     matchLabels:

@@ -1,0 +1,89 @@
+# This task updates the rendered branches with a promoted git
+# commit. If the contents of the promoted commit are older
+# than tip of main, will also restore main with the older version
+# so that main is always an accurate source of truth.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionTask
+metadata:
+  name: render-commit
+  namespace: kargo-rendered-branches
+spec:
+  vars:
+  - name: repoURL
+    value: https://github.com/akuity/kargo-rendered-branches.git
+  - name: branch
+    value: main
+  - name: stage
+  steps:
+  # Clone the templated config in main branch to ./main
+  # The desired, promoting commit to ./desired
+  # and the env branch to ./out.
+  - uses: git-clone
+    config:
+      repoURL: ${{ vars.repoURL }}
+      checkout:
+      - branch: ${{ vars.branch }}
+        path: ./main
+      - commit: ${{ commitFrom( vars.repoURL ).ID }}
+        path: ./desired
+      - branch: env/${{ vars.stage }}
+        path: ./out
+        create: true
+
+  # When promoting a git commit, we update env/<stage>/values.yaml
+  # in main, with the version of the file from the desired,
+  # promoting git commit. In the common case, a user would have
+  # just made the commit themselves to tip of main, so the promoted
+  # git commit *is* the version in tip of main, and these steps
+  # have no effect.
+  #
+  # However, we may be promoting a version of the file from an
+  # older commit. In this case, we need to restore the *older*
+  # version of the file to tip of main.
+  - uses: copy
+    config:
+      inPath: ./desired/env/${{ vars.stage }}/values.yaml
+      outPath: ./main/env/${{ vars.stage }}/values.yaml
+  - uses: git-commit
+    as: commit
+    config:
+      path: ./main
+      message: ${{ commitFrom( vars.repoURL ).Message }}
+  - uses: git-push
+    config:
+      path: ./main
+
+  # Render the configuration to the branch
+  - uses: git-clear
+    config:
+      path: ./out
+  - uses: helm-template
+    config:
+      path: ./main/charts/guestbook
+      releaseName: guestbook
+      useReleaseName: false
+      valuesFiles:
+      - ./main/env/${{ vars.stage }}/values-image.yaml
+      - ./main/env/${{ vars.stage }}/values.yaml
+      outPath: ./out
+  - uses: git-commit
+    as: commit
+    config:
+      path: ./out
+      message: ${{ commitFrom( vars.repoURL ).Message }}
+  - uses: git-push
+    config:
+      path: ./out
+
+  # This is necessary because we call this task repeatedly
+  # and so subsequent git clones will have clean working
+  # directories
+  - uses: delete
+    config:
+      path: ./main
+  - uses: delete
+    config:
+      path: ./desired
+  - uses: delete
+    config:
+      path: ./out

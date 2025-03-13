@@ -22,5 +22,9 @@ spec:
       repoURL: https://github.com/akuity/kargo-rendered-branches.git
       branch: main
       includePaths:
-      - base
+      - glob:charts/**
       - glob:env/**
+      # Ignore updates to values-image.yaml, since those are updated by image promotion
+      # and will be rendered to the env specific branch by the render-image task.
+      excludePaths:
+      - glob:env/*/values-image.yaml

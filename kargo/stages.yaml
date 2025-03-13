@@ -1,3 +1,5 @@
+# The dev -> staging -> prod pipeline is defined by the following
+# three Stages and handles promotion of image tags.
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
@@ -15,8 +17,8 @@ spec:
   promotionTemplate:
     spec:
       steps:
-      - task: {name: render-image}
-        vars: [{name: env, value: dev}]
+      - task:
+          name: render-image
 
 ---
 apiVersion: kargo.akuity.io/v1alpha1
@@ -37,14 +39,14 @@ spec:
   promotionTemplate:
     spec:
       steps:
-      - task: {name: render-image}
-        vars: [{name: env, value: staging}]
+      - task:
+          name: render-image
 
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
-  name: prod-west
+  name: prod
   namespace: kargo-rendered-branches
   annotations:
     kargo.akuity.io/color: red
@@ -59,18 +61,21 @@ spec:
   promotionTemplate:
     spec:
       steps:
-      - task: {name: render-image}
-        vars: [{name: env, value: prod}]
+      - task:
+          name: render-image
 
 ---
-# This stage renders configuration changes for all environments.
+# This render-envs Stage renders configuration to env specific branches
+# and promote any changes made to the env/*/values.yaml, excluding
+# changes to env/*/values-image.yaml, which are handled by the individual
+# environment Stages.
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: render-envs
   namespace: kargo-rendered-branches
   annotations:
-    kargo.akuity.io/color: grey
+    kargo.akuity.io/color: blue
 spec:
   requestedFreight:
   - origin:
@@ -81,9 +86,9 @@ spec:
   promotionTemplate:
     spec:
       steps:
-      - task: {name: render-config}
-        vars: [{name: env, value: dev}]
-      - task: {name: render-config}
-        vars: [{name: env, value: staging}]
-      - task: {name: render-config}
-        vars: [{name: env, value: prod}]
+      - task: {name: render-commit}
+        vars: [{name: stage, value: dev}]
+      - task: {name: render-commit}
+        vars: [{name: stage, value: staging}]
+      - task: {name: render-commit}
+        vars: [{name: stage, value: prod}]

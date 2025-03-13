@@ -1,3 +1,5 @@
+# This task is used to update the main and env branches with
+# image tags from the promoted image.
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionTask
 metadata:
@@ -6,54 +8,62 @@ metadata:
 spec:
   vars:
   - name: repoURL
-    value: https://github.com/akuity/rendered-branches.git
-  - name: branch
-    value: main
-  - name: env
+    value: https://github.com/akuity/kargo-rendered-branches.git
   - name: image
     value: ghcr.io/akuity/guestbook
+  - name: branch
+    value: main
+  - name: stage
+    value: ${{ ctx.stage }}
   steps:
-  # Clone the Git repository that contains the Kustomize configuration
-  # to the ./src directory, and the environment configuration to ./out.
+  # Clone the unrendered, templated config in main branch to ./main
+  # and the env-specific rendered branch to ./out.
   - uses: git-clone
     config:
       repoURL: ${{ vars.repoURL }}
       checkout:
-      - commit: ${{ commitFrom(vars.repoURL).ID }}
-        path: ./src
-      - branch: env/${{ vars.env }}
+      - branch: ${{ vars.branch }}
+        path: ./main
+      - branch: env/${{ vars.stage }}
         path: ./out
-        # Create the branch if it does not exist.
         create: true
-  # Following a "rendered branch" pattern, we delete all files in the
-  # ./out directory to ensure that we only have the files that are
-  # rendered from the Kustomize configuration in the ./src directory
-  # of the repository after being rendered.
+
+  # Update env/<stage>/values-image.yaml with the promoted image tag
+  # Then commit and push the changes to main
+  - uses: yaml-update
+    config:
+      path: ./main/env/${{ vars.stage }}/values-image.yaml
+      updates:
+      - key: image.tag
+        value: ${{ imageFrom( vars.image ).Tag }}
+  - uses: git-commit
+    as: commit
+    config:
+      path: ./main
+      message: ${{ 'Update ' + vars.stage + ' to ' + imageFrom(vars.image).Tag }}
+  - uses: git-push
+    config:
+      path: ./main
+
+  # Render the configuration to the env-specific branch.
+  # Then commit and push the changes
   - uses: git-clear
     config:
       path: ./out
-  # Update the image in the Kustomize configuration located at ./src/env/<stage>
-  # in the repository.
-  - uses: kustomize-set-image
-    as: update-image
+  - uses: helm-template
     config:
-      path: ./src/env/${{ vars.env }}
-      images:
-      - image: ${{ vars.image }}
-        tag: ${{ imageFrom(vars.image).Tag}}
-  # Build the Kustomize configuration in the ./src directory using the env/<stage>
-  # overlay to the ./out directory.
-  - uses: kustomize-build
-    config:
-      path: ./src/env/${{ vars.env }}
+      path: ./main/charts/guestbook
+      releaseName: guestbook
+      useReleaseName: false
+      valuesFiles:
+      - ./main/env/${{ vars.stage }}/values-image.yaml
+      - ./main/env/${{ vars.stage }}/values.yaml
       outPath: ./out
-  # Commit the changes to the Git repository.
   - uses: git-commit
     as: commit
     config:
       path: ./out
-      message: ${{ task.outputs['update-image'].commitMessage }}
-  # Push the changes to the Git repository.
+      message: ${{ 'Update ' + vars.stage + ' to ' + imageFrom(vars.image).Tag }}
   - uses: git-push
     config:
       path: ./out

@@ -1,0 +1,36 @@
+---
+# Source: guestbook/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guestbook
+  labels:
+    helm.sh/chart: guestbook-0.1.0
+    app.kubernetes.io/name: guestbook
+    app.kubernetes.io/instance: guestbook
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: guestbook
+      app.kubernetes.io/instance: guestbook
+  template:
+    metadata:
+      annotations:
+        env: dev
+      labels:
+        app.kubernetes.io/name: guestbook
+        app.kubernetes.io/instance: guestbook
+    spec:
+      containers:
+        - name: guestbook
+          image: "ghcr.io/akuity/guestbook:v0.0.83"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            {}

@@ -19,6 +19,7 @@ spec:
   template:
     metadata:
       annotations:
+        boo: baz
         env: dev
         foo: bar
       labels:

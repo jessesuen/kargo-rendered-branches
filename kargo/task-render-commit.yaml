@@ -10,7 +10,7 @@ metadata:
 spec:
   vars:
   - name: repoURL
-    value: https://github.com/akuity/kargo-rendered-branches.git
+    value: https://github.com/jessesuen/kargo-rendered-branches.git
   - name: branch
     value: main
   - name: stage

@@ -6,7 +6,7 @@ metadata:
 spec:
   subscriptions:
   - image:
-      repoURL: ghcr.io/akuity/guestbook
+      repoURL: ghcr.io/jessesuen/guestbook
       imageSelectionStrategy: SemVer
       allowTags: ^v?[0-9]+\.[0-9]+\.[0-9]+([\+-].*)?$
 
@@ -19,7 +19,7 @@ metadata:
 spec:
   subscriptions:
   - git:
-      repoURL: https://github.com/akuity/kargo-rendered-branches.git
+      repoURL: https://github.com/jessesuen/kargo-rendered-branches.git
       branch: main
       includePaths:
       - glob:charts/**

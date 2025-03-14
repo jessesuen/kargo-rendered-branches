@@ -19,7 +19,6 @@ spec:
   template:
     metadata:
       annotations:
-        boo: baz
         env: dev
         foo: bar
       labels:
@@ -28,7 +27,7 @@ spec:
     spec:
       containers:
         - name: guestbook
-          image: "ghcr.io/jessesuen/guestbook:v0.0.88"
+          image: "ghcr.io/jessesuen/guestbook:v0.0.83"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

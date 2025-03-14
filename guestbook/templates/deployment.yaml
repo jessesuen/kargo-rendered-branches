@@ -20,15 +20,14 @@ spec:
     metadata:
       annotations:
         env: dev
-        foo: bar
       labels:
         app.kubernetes.io/name: guestbook
         app.kubernetes.io/instance: guestbook
     spec:
       containers:
         - name: guestbook
-          image: "ghcr.io/jessesuen/guestbook:v0.0.83"
-          imagePullPolicy: Always
+          image: "ghcr.io/jessesuen/guestbook:v0.0.89"
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 80
